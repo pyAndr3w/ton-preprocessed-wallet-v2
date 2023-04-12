@@ -1,0 +1,38 @@
+/*
+  ton-preprocessed-wallet-v2 – open-source optimized wallet for tvm-based blochchains
+
+  Copyright (C) 2023 pyAndr3w <gutarev01@gmail.com>
+
+  This file is part of ton-preprocessed-wallet-v2.
+
+  ton-preprocessed-wallet-v2 is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  ton-preprocessed-wallet-v2 is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with ton-preprocessed-wallet-v2.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+
+"Asm.fif" include
+
+<{
+    SETCP0 IFNOTRET                                     // msg
+    9 PUSHPOW2 LDSLICEX DUP HASHSU SWAP 64 LDU 16 LDU   // sign hash valid_until msg_seqno msg
+    c4 PUSH CTOS                                        // sign hash valid_until msg_seqno msg c4s
+    256 LDU 16 PLDU                                     // sign hash valid_until msg_seqno msg key seqno
+    DUP INC 16 PUSHPOW2 MOD s2 PUSH                     // sign hash valid_until msg_seqno msg key seqno new_seqno key
+    NEWC 256 STU 16 STU ENDC c4 POP                     // sign hash valid_until msg_seqno msg key seqno
+    s4 s3 s0 XCHG3 s4 s6 XCHG                           // msg hash sign key valid_until msg_seqno seqno
+    EQUAL 33 THROWIFNOT                                 // msg hash sign key valid_until
+    NOW GEQ 34 THROWIFNOT                               // msg hash sign key
+    CHKSIGNU 35 THROWIFNOT                              // msg
+    ACCEPT COMMIT                                       // msg
+    PLDREF c5 POP
+}>c

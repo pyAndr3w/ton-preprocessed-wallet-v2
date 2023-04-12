@@ -1,0 +1,23 @@
+
+##  ton-preprocessed-wallet-v2
+
+
+**code boc**
+```text
+B5EE9C7241010101004000007CFF00DD8308D71820F90101D33FD31FED44D0D3FFD70B0F20A4830FA90822C8CBFFCB0FC9ED5444301046BAF2A1F823BEF2A2F910F2A3F800F80FD74CED5592B0B837
+```
+
+**code hash**
+```text
+FF4487B23CD5367796631A11C69B72096DA679A0F5E4258ACD07FA51B87D3502
+```
+
+**TL-B schemes**
+```c#
+msg_body$_ sign:bits512 valid_until:uint64 seq_no:uint16 actions:^OutListNode = ExtInMsgBody;
+
+storage$_ pub_key:bits256 seq_no:uint16 = Storage;
+```
+
+## License
+[GNU GENERAL PUBLIC LICENSE Version 3](./LICENSE)
