@@ -1,6 +1,4 @@
-
 ##  ton-preprocessed-wallet-v2
-
 
 **code boc**
 ```text
@@ -21,6 +19,10 @@ msg_body$_ {n:#} sign:bits512 ^(MsgInner n) = ExtInMsgBody n;
 
 storage$_ pub_key:bits256 seq_no:uint16 = Storage;
 ```
+
+## debot usage
+- `cd debot`
+- `make`
 
 ## License
 [GNU GENERAL PUBLIC LICENSE Version 3](./LICENSE)

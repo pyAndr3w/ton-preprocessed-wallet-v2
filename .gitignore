@@ -1,1 +1,15 @@
+# IDE
 .idea
+.vscode
+
+# MacOS General
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Logs
+*.log
+
+# Build
+debot/build/*
+!debot/build/.gitkeep

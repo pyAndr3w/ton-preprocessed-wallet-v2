@@ -1,0 +1,103 @@
+() recv_internal() impure { }
+
+;; int_msg_info$0 ihr_disabled:Bool bounce:Bool bounced:Bool src:MsgAddress
+const int msg::flags_bounce_false = 0x10; ;; b'010000' -> hex -> 0x10
+const int msg::flags_bounce_true  = 0x18; ;; b'011000' -> hex -> 0x10
+
+int tuple_len(tuple) asm "TLEN";
+forall X -> (X) idxvar_t(tuple, int) asm "INDEXVAR";
+builder store_builder(builder b, builder b1) asm(b1 b) "STB";
+
+forall M, E, O, W, R, R1 -> ( M, E, O, W, R, R1)
+untuple6([ M, E, O, W, R, R1] t) asm "6 UNTUPLE";
+
+builder data::begin_int_msg(int flags, slice addr, int amount) inline {
+    return begin_cell()
+        .store_uint(flags, 6)
+        .store_slice(addr)
+        .store_grams(amount)
+        .store_uint(0, 1 + 4 + 4 + 64 + 32);
+        ;; 1  zeros (ExtraCurrencyCollection)
+        ;; 4  zeros (ihr_fee:Grams)
+        ;; 4  zeros (fwd_fee:Grams)
+        ;; 64 zeros (created_lt:uint64)
+        ;; 32 zeros (created_at:uint32)
+}
+
+builder data::store_either_cell(builder b, cell c) inline {
+    slice cs = c.begin_parse();
+    return (b.builder_bits() + cs.slice_bits() > 1023)
+            ? b.store_int(true, 1).store_ref(c)
+            : b.store_int(false, 1).store_slice(cs);
+}
+
+cell data::int_msg(slice to, int value, int bounce, cell body, cell init) inline {
+    int flags = bounce ? msg::flags_bounce_true : msg::flags_bounce_false;
+
+    builder msg = data::begin_int_msg(flags, to, value);
+    msg = cell_null?(init) ? msg.store_int(false, 1) : msg.store_uint(3, 2).store_ref(init);
+    msg = cell_null?(body) ? msg.store_int(false, 1) : msg.data::store_either_cell(body);
+
+    return msg.end_cell();
+}
+
+(builder) data::pack_action_send_b(int mode, cell out_msg) inline {
+    return begin_cell()
+        .store_uint(0x0ec3c86d, 32)
+        .store_uint(mode, 8)
+        .store_ref(out_msg);
+}
+
+;; storage$_ pub_key:bits256 seq_no:uint16 = Storage;
+(int, int) pwv2::parse_storage(cell c) method_id {
+    slice cs = c.begin_parse();
+
+    return (cs~load_uint(256),    ;; pub_key
+            cs.preload_uint(16)); ;; seq_no
+}
+
+;; storage$_ pub_key:bits256 seq_no:uint16 = Storage;
+(cell) pwv2::pack_storage(int pub_key, int seq_no) method_id {
+    builder storage = begin_cell()
+        .store_uint(pub_key, 256)
+        .store_uint(seq_no, 16);
+
+    return storage.end_cell();
+}
+
+;; [[slice to, int value, int mode, int bounce, cell body, cell init]] msgs
+(cell) pwv2::pack_actions(tuple msgs) method_id {
+    cell cur = begin_cell().end_cell();
+    (int tlen, int i) = (tuple_len(msgs), 0);
+
+    while (i < tlen) {
+        (slice to, int value, int mode, int bounce, cell body, cell init)
+        = untuple6(msgs.idxvar_t(i));
+
+        cell    int_msg = data::int_msg(to, value, bounce, body, init);
+        builder actsend = data::pack_action_send_b(mode, int_msg);
+        builder new = begin_cell().store_ref(cur).store_builder(actsend);
+
+        cur = new.end_cell();
+        i += 1;
+    };
+
+    return cur;
+}
+
+(cell) pwv2::pack_for_sign(int valid_until, int seq_no, cell actions) method_id {
+    builder data = begin_cell()
+        .store_uint(valid_until, 64)
+        .store_uint(seq_no, 16)
+        .store_ref(actions);
+
+    return data.end_cell();
+}
+
+(cell) pwv2::pack_msg_body(slice sign, cell data) method_id {
+    builder msg_body = begin_cell()
+        .store_slice(sign)
+        .store_ref(data);
+
+    return msg_body.end_cell();
+}
