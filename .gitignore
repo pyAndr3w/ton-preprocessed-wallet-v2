@@ -13,3 +13,8 @@
 # Build
 debot/build/*
 !debot/build/.gitkeep
+
+# Debug
+debot/test.fif
+debot/extmsg.fif
+debot/config.boc

@@ -6,12 +6,11 @@ PFX=main
 OUT=build
 FUNC=func
 FIFT=fift
-STDLIB=stdlib.fc
 
 all: $(OUT)/$(PFX).code.boc print
 
 $(OUT)/$(PFX).code.fif: $(PFX).fc
-	$(FUNC) -SPA -o $(OUT)/$(PFX).code.fif -W $(OUT)/$(PFX).code.boc $(STDLIB) $(PFX).fc
+	$(FUNC) -SPA -o $(OUT)/$(PFX).code.fif -W $(OUT)/$(PFX).code.boc $(PFX).fc
 
 $(OUT)/$(PFX).code.boc: $(OUT)/$(PFX).code.fif
 	$(FIFT) $(OUT)/$(PFX).code.fif

@@ -1,82 +1,100 @@
+#pragma version ^0.4.2;
+
+#include "./stdlib.fc";
+
 () recv_internal() impure { }
 
-;; int_msg_info$0 ihr_disabled:Bool bounce:Bool bounced:Bool src:MsgAddress
-const int msg::flags_bounce_false = 0x10; ;; b'010000' -> hex -> 0x10
-const int msg::flags_bounce_true  = 0x18; ;; b'011000' -> hex -> 0x10
-
 int tuple_len(tuple) asm "TLEN";
-forall X -> (X) idxvar_t(tuple, int) asm "INDEXVAR";
 builder store_builder(builder b, builder b1) asm(b1 b) "STB";
 
-forall M, E, O, W, R, R1 -> ( M, E, O, W, R, R1)
-untuple6([ M, E, O, W, R, R1] t) asm "6 UNTUPLE";
+forall X -> (X) idxvar_t(tuple, int) asm "INDEXVAR";
 
-builder data::begin_int_msg(int flags, slice addr, int amount) inline {
-    return begin_cell()
-        .store_uint(flags, 6)
-        .store_slice(addr)
-        .store_grams(amount)
-        .store_uint(0, 1 + 4 + 4 + 64 + 32);
-        ;; 1  zeros (ExtraCurrencyCollection)
-        ;; 4  zeros (ihr_fee:Grams)
-        ;; 4  zeros (fwd_fee:Grams)
-        ;; 64 zeros (created_lt:uint64)
-        ;; 32 zeros (created_at:uint32)
+forall M, E, O, W, C, A, T -> ( M, E, O, W, C, A, T )
+untuple7([ M, E, O, W, C, A, T ] t) asm "7 UNTUPLE";
+
+cell wallet_code() asm "124 word ../code.fif| include PUSHREF";
+
+slice utils::build_addrstd(int wc, int address) inline {
+    builder addr = begin_cell()
+        .store_uint(4, 3) ;; addr_std$10 without AnyCast
+        .store_int(wc, 8) ;; workchain
+        .store_uint(address, 256);
+
+    return addr.end_cell().begin_parse();
 }
 
-builder data::store_either_cell(builder b, cell c) inline {
+builder data::int_msg_info(int bounce, slice dest, int value) {
+    return begin_cell()
+        .store_uint(bounce ? 0x18 : 0x10, 6)
+        .store_slice(dest)
+        .store_grams(value)
+        .store_uint(0, 1 + 4 + 4 + 64 + 32);
+}
+
+builder data::ext_in_msg_info(slice dest) {
+    return begin_cell()
+        .store_uint(0x8, 4)
+        .store_slice(dest)
+        .store_grams(0);
+}
+
+builder data::store_either(builder b, cell c) {
     slice cs = c.begin_parse();
     return (b.builder_bits() + cs.slice_bits() > 1023)
             ? b.store_int(true, 1).store_ref(c)
             : b.store_int(false, 1).store_slice(cs);
 }
 
-cell data::int_msg(slice to, int value, int bounce, cell body, cell init) inline {
-    int flags = bounce ? msg::flags_bounce_true : msg::flags_bounce_false;
+cell data::pack_message(builder info, cell body, cell init) {
+    if (~ cell_null?(init)) {
+        info = info.store_int(true, 1);
+        info = info.data::store_either(init);
+    } else {
+        info = info.store_int(false, 1);
+    }
 
-    builder msg = data::begin_int_msg(flags, to, value);
-    msg = cell_null?(init) ? msg.store_int(false, 1) : msg.store_uint(3, 2).store_ref(init);
-    msg = cell_null?(body) ? msg.store_int(false, 1) : msg.data::store_either_cell(body);
+    if (~ cell_null?(body)) {
+        info = info.data::store_either(body);
+    } else {
+        info = info.store_int(false, 1);
+    }
 
-    return msg.end_cell();
+    return info.end_cell();
 }
 
-(builder) data::pack_action_send_b(int mode, cell out_msg) inline {
+cell data::pack_state_init(cell code, cell data) {
+    builder state_init = begin_cell()
+        .store_int(false, 1)
+        .store_int(false, 1)
+        .store_maybe_ref(code)
+        .store_maybe_ref(data)
+        .store_int(false, 1);
+
+    return state_init.end_cell();
+}
+
+(builder) data::pack_action_send(int mode, cell out_msg) {
     return begin_cell()
         .store_uint(0x0ec3c86d, 32)
         .store_uint(mode, 8)
         .store_ref(out_msg);
 }
 
-;; storage$_ pub_key:bits256 seq_no:uint16 = Storage;
-(int, int) pwv2::parse_storage(cell c) method_id {
-    slice cs = c.begin_parse();
-
-    return (cs~load_uint(256),    ;; pub_key
-            cs.preload_uint(16)); ;; seq_no
-}
-
-;; storage$_ pub_key:bits256 seq_no:uint16 = Storage;
-(cell) pwv2::pack_storage(int pub_key, int seq_no) method_id {
-    builder storage = begin_cell()
-        .store_uint(pub_key, 256)
-        .store_uint(seq_no, 16);
-
-    return storage.end_cell();
-}
-
-;; [[slice to, int value, int mode, int bounce, cell body, cell init]] msgs
-(cell) pwv2::pack_actions(tuple msgs) method_id {
+;; [[int to_wc, int to_addr, int value, int mode, int bounce, cell body, cell init]] msgs
+(cell) data::pack_actions(tuple msgs) inline_ref {
     cell cur = begin_cell().end_cell();
     (int tlen, int i) = (tuple_len(msgs), 0);
 
     while (i < tlen) {
-        (slice to, int value, int mode, int bounce, cell body, cell init)
-        = untuple6(msgs.idxvar_t(i));
+        (int to_wc, int to_addr, int value, int mode, int bounce, cell body, cell init)
+        = untuple7(msgs.idxvar_t(i));
 
-        cell    int_msg = data::int_msg(to, value, bounce, body, init);
-        builder actsend = data::pack_action_send_b(mode, int_msg);
-        builder new = begin_cell().store_ref(cur).store_builder(actsend);
+        slice   to_addr      = utils::build_addrstd(to_wc, to_addr);
+        builder int_msg_info = data::int_msg_info(bounce, to_addr, value);
+        cell    int_message  = data::pack_message(int_msg_info, body, init);
+
+        builder actsend = data::pack_action_send(mode, int_message);
+        builder new     = begin_cell().store_ref(cur).store_builder(actsend);
 
         cur = new.end_cell();
         i += 1;
@@ -85,7 +103,7 @@ cell data::int_msg(slice to, int value, int bounce, cell body, cell init) inline
     return cur;
 }
 
-(cell) pwv2::pack_for_sign(int valid_until, int seq_no, cell actions) method_id {
+(cell) data::pack_msg_inner(int valid_until, int seq_no, cell actions) {
     builder data = begin_cell()
         .store_uint(valid_until, 64)
         .store_uint(seq_no, 16)
@@ -94,10 +112,93 @@ cell data::int_msg(slice to, int value, int bounce, cell body, cell init) inline
     return data.end_cell();
 }
 
-(cell) pwv2::pack_msg_body(slice sign, cell data) method_id {
+(cell) data::pack_msg_body(slice sign, cell msg_inner) {
     builder msg_body = begin_cell()
         .store_slice(sign)
-        .store_ref(data);
+        .store_ref(msg_inner);
 
     return msg_body.end_cell();
 }
+
+(cell) data::pack_wallet_storage(int public_key, int seq_no) {
+    builder storage = begin_cell()
+        .store_uint(public_key, 256)
+        .store_uint(seq_no, 16);
+
+    return storage.end_cell();
+}
+
+(cell) data::pack_external_msg(
+    slice sign, cell msg_inner,
+    int wc, int public_key, int init?
+) {
+    cell body = data::pack_msg_body(sign, msg_inner);
+
+    cell code = wallet_code();
+    cell data = data::pack_wallet_storage(public_key, 0);
+    cell init = data::pack_state_init(code, data);
+
+    slice   address     = utils::build_addrstd(wc, cell_hash(init));
+    builder msg_info    = data::ext_in_msg_info(address);
+    cell    ext_message = data::pack_message(msg_info, body, init? ? init : null());
+
+    return (ext_message);
+}
+
+;; ================================ public get methods ================================
+
+;; data – cell – root of persistent data (c4)
+(int {- pub_key -}, int {- seq_no -}) parse_storage(cell data) method_id {
+    slice cs = data.begin_parse();
+    return (cs~load_uint(256), cs.preload_uint(16));
+}
+
+;; public_key – int – wallet public_key
+(int) address_by_public_key(int public_key) method_id {
+    cell code = wallet_code();
+    cell data = data::pack_wallet_storage(public_key, 0);
+    cell init = data::pack_state_init(code, data);
+
+    return cell_hash(init);
+}
+
+;; valid_until – int   – unix timestamp until the message is valid
+;; seq_no      – int   – curent wallet seq_no (sequence number)
+;; msgs        – tuple – [[int to_wc, int to_addr, int value, int mode, int bounce, cell body, cell init]]
+(cell {- msg_inner -}, int {- hash -}) pack_msg_inner(int valid_until, int seq_no, tuple msgs) method_id {
+    cell actions   = data::pack_actions(msgs);
+    cell msg_inner = data::pack_msg_inner(valid_until, seq_no, actions);
+    return (msg_inner, cell_hash(msg_inner));
+}
+
+;; sign_0     – int   – first 256 bits of msg_inner ed25519 signature
+;; sign_1     – int   – second 256 bits of msg_inner ed25519 signature
+;; msg_inner  – cell  – cell built by using the pack_msg_inner_sign
+;; wc         – int   – target wallet contract workchain
+;; public_key – int   – wallet public_key or zero value
+;; init?      – int   – add state init or not -1 (true) or 0 (false)
+(cell) pack_extmsg_with_sign_parts(
+    int sign_0, int sign_1, cell msg_inner,
+    int wc, int public_key, int init?
+) method_id {
+    slice sign = begin_cell()
+        .store_uint(sign_0, 256)
+        .store_uint(sign_1, 256)
+        .end_cell().begin_parse();
+
+    return data::pack_external_msg(sign, msg_inner, wc, public_key, init?);
+}
+
+;; sign       – slice – ed25519 signature of the msg_inner cell
+;; msg_inner  – cell  – cell built by using the pack_msg_inner_sign
+;; wc         – int   – target wallet contract workchain
+;; public_key – int   – wallet public_key or zero value
+;; init?      – int   – add state init or not -1 (true) or 0 (false)
+(cell) pack_extmsg_with_sign_slice(
+    slice sign, cell msg_inner,
+    int wc, int public_key, int init?
+) method_id {
+    return data::pack_external_msg(sign, msg_inner, wc, public_key, init?);
+}
+
+;; ====================================================================================
