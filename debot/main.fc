@@ -1,3 +1,23 @@
+{-
+  ton-preprocessed-wallet-v2-debot – open-source debot for interacting with ton-preprocessed-wallet-v2
+
+  Copyright (C) 2023 cryshado <github.com/cryshado>
+
+  This file is part of ton-preprocessed-wallet-v2
+
+  ton-preprocessed-wallet-v2 is free software: you can redistribute it and/or modify it under the terms
+  of the GNU Lesser General Public License as published by the Free Software Foundation,
+  either version 3 of the License, or (at your option) any later version.
+
+  ton-preprocessed-wallet-v2 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+  See the GNU Lesser General Public License for more details.
+
+  You should have received a copy of the GNU Lesser General Public License along with ton-preprocessed-wallet-v2.
+  If not, see <https://www.gnu.org/licenses/>.
+-}
+
+
 #pragma version ^0.4.2;
 
 #include "./stdlib.fc";
