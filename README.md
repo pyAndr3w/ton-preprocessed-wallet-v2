@@ -22,7 +22,7 @@ storage$_ pub_key:bits256 seq_no:uint16 = Storage;
 ## debot usage
 
 We recommend using special debot TVM code to prepare messages for
-this wallet smart contract, running it locally in TVM. [Read more.](./debot/README.md)
+this wallet smart contract, running it locally in TVM. This will help avoid bugs, as building a message for this smart contract may not seem easy. Read more in [`debot/README.md`](./debot/README.md).
 
 - `cd debot`
 - `make`
