@@ -25,4 +25,4 @@ We recommend using special debot TVM code to prepare messages for
 this wallet smart contract, running it locally in TVM. This will help avoid bugs, as building a message for this smart contract may not seem easy. <br> Read more in [`debot/README.md`](./debot/README.md).
 
 ## License
-[GNU GENERAL PUBLIC LICENSE Version 3](./LICENSE)
+[GNU LESSER GENERAL PUBLIC LICENSE Version 3](./LICENSE.LGPL)
