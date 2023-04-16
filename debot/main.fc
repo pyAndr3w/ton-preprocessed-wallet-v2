@@ -1,9 +1,9 @@
 {-
-  ton-preprocessed-wallet-v2 – open-source optimized wallet for tvm-based blockchains
+  ton-preprocessed-wallet-v2-debot – open-source debot for interacting with ton-preprocessed-wallet-v2
 
   Copyright (C) 2023 cryshado <github.com/cryshado>
 
-  This file is part of ton-preprocessed-wallet-v2.
+  This file is part of ton-preprocessed-wallet-v2
 
   ton-preprocessed-wallet-v2 is free software: you can redistribute it and/or modify it under the terms
   of the GNU Lesser General Public License as published by the Free Software Foundation,
