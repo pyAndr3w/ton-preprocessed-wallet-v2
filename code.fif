@@ -19,10 +19,9 @@
 
 "Asm.fif" include
 
-
 <{
     SETCP0 IFNOTRET                         // msg
-    9 PUSHPOW2 LDSLICEX PLDREF DUP HASHCU   // sign msg' hash
+    LDREF SWAP DUP HASHCU                   // sign msg' hash
     SWAP CTOS 64 LDU 16 LDU PLDREF          // sign hash valid_until msg_seqno actions
     c4 PUSH CTOS                            // sign hash valid_until msg_seqno actions c4s
     256 LDU 16 PLDU                         // sign hash valid_until msg_seqno actions key seqno
