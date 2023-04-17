@@ -34,6 +34,14 @@ function formSendMsgAction(
         .asSlice();
 }
 
+function formSetCodeAction(code: Cell): Slice {
+    return beginCell()
+        .storeUint(0xad4de08e, 32)
+        .storeRef(code)
+        .endCell()
+        .asSlice();
+}
+
 export class Wallet implements Contract {
     constructor(
         readonly address: Address,
@@ -92,6 +100,14 @@ export class Wallet implements Contract {
             formSendMsgAction(recipient, value, body, 1),
             keypair
         );
+    }
+
+    async sendSetCode(
+        provider: ContractProvider,
+        keypair: KeyPair,
+        code: Cell
+    ) {
+        await this.sendAction(provider, formSetCodeAction(code), keypair);
     }
 
     async getPublicKey(provider: ContractProvider): Promise<Maybe<Buffer>> {
