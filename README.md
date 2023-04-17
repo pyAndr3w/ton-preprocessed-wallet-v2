@@ -19,6 +19,11 @@ msg_body$_ {n:#} sign:bits512 ^(MsgInner n) = ExtInMsgBody n;
 storage$_ pub_key:bits256 seq_no:uint16 = Storage;
 ```
 
+**Error codes**
+- `33` - incorrect sequence number
+- `34` - overdue
+- `35` - invalid signature
+
 ## debot usage
 
 We recommend using special debot TVM code to prepare messages for
