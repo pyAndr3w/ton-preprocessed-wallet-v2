@@ -8,6 +8,8 @@ import {
     Sender,
     SendMode,
     Slice,
+    StateInit,
+    storeStateInit,
 } from 'ton-core';
 import { Maybe } from 'ton-core/dist/utils/maybe';
 import { KeyPair, sign } from 'ton-crypto';
@@ -15,21 +17,31 @@ import { KeyPair, sign } from 'ton-crypto';
 function formSendMsgAction(
     recipient: Address,
     value: bigint,
-    body: Cell,
-    mode: number
+    mode: number,
+    body?: Cell,
+    init?: StateInit
 ): Slice {
+    let b = beginCell()
+        .storeUint(0x18, 6)
+        .storeAddress(recipient)
+        .storeCoins(value)
+        .storeUint(0, 105);
+    if (init) {
+        b.storeUint(3, 2);
+        b.storeRef(beginCell().store(storeStateInit(init)).endCell());
+    } else {
+        b.storeUint(0, 1);
+    }
+    if (body) {
+        b.storeUint(1, 1);
+        b.storeRef(body);
+    } else {
+        b.storeUint(0, 1);
+    }
     return beginCell()
         .storeUint(0x0ec3c86d, 32)
         .storeUint(mode, 8)
-        .storeRef(
-            beginCell()
-                .storeUint(0x18, 6)
-                .storeAddress(recipient)
-                .storeCoins(value)
-                .storeUint(1, 107)
-                .storeRef(body)
-                .endCell()
-        )
+        .storeRef(b.endCell())
         .endCell()
         .asSlice();
 }
@@ -93,11 +105,12 @@ export class Wallet implements Contract {
         keypair: KeyPair,
         recipient: Address,
         value: bigint,
-        body: Cell
+        body?: Cell,
+        init?: StateInit
     ) {
         await this.sendAction(
             provider,
-            formSendMsgAction(recipient, value, body, 1),
+            formSendMsgAction(recipient, value, 1, body, init),
             keypair
         );
     }

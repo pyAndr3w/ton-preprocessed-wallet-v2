@@ -1,7 +1,6 @@
 import {
     Blockchain,
     SandboxContract,
-    Treasury,
     TreasuryContract,
 } from '@ton-community/sandbox';
 import { Cell, beginCell, toNano } from 'ton-core';
@@ -71,12 +70,7 @@ describe('Flooder', () => {
 
     it('should send simple transfers', async () => {
         const addr = randomAddress();
-        let result = await wallet.sendTransfer(
-            keypair,
-            addr,
-            toNano('0.01'),
-            Cell.EMPTY
-        );
+        let result = await wallet.sendTransfer(keypair, addr, toNano('0.01'));
         expect(result.transactions).toHaveTransaction({
             from: wallet.address,
             to: addr,
