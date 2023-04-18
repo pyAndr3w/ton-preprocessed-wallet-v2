@@ -14,27 +14,28 @@ import {
 import { Maybe } from 'ton-core/dist/utils/maybe';
 import { KeyPair, sign } from 'ton-crypto';
 
-function formSendMsgAction(
-    recipient: Address,
-    value: bigint,
-    mode: number,
-    body?: Cell,
-    init?: StateInit
-): Slice {
+type MessageToSend = {
+    recipient: Address;
+    value: bigint;
+    init?: StateInit;
+    body?: Cell;
+};
+
+function formSendMsgAction(msg: MessageToSend, mode: number): Slice {
     let b = beginCell()
         .storeUint(0x18, 6)
-        .storeAddress(recipient)
-        .storeCoins(value)
+        .storeAddress(msg.recipient)
+        .storeCoins(msg.value)
         .storeUint(0, 105);
-    if (init) {
+    if (msg.init) {
         b.storeUint(3, 2);
-        b.storeRef(beginCell().store(storeStateInit(init)).endCell());
+        b.storeRef(beginCell().store(storeStateInit(msg.init)).endCell());
     } else {
         b.storeUint(0, 1);
     }
-    if (body) {
+    if (msg.body) {
         b.storeUint(1, 1);
-        b.storeRef(body);
+        b.storeRef(msg.body);
     } else {
         b.storeUint(0, 1);
     }
@@ -81,17 +82,23 @@ export class Wallet implements Contract {
         });
     }
 
-    private async sendAction(
+    private async sendActions(
         provider: ContractProvider,
-        action: Slice,
+        actions: Slice[],
         keypair: KeyPair
     ) {
+        let actionsCell = Cell.EMPTY;
+        for (const action of actions) {
+            actionsCell = beginCell()
+                .storeRef(actionsCell)
+                .storeSlice(action)
+                .endCell();
+        }
+
         const msgInner = beginCell()
             .storeUint(Math.floor(Date.now() / 1000) + 3600, 64)
             .storeUint((await this.getSeqno(provider))!, 16)
-            .storeRef(
-                beginCell().storeRef(Cell.EMPTY).storeSlice(action).endCell()
-            )
+            .storeRef(actionsCell)
             .endCell();
         const hash = msgInner.hash();
         const signature = sign(hash, keypair.secretKey);
@@ -100,17 +107,14 @@ export class Wallet implements Contract {
         );
     }
 
-    async sendTransfer(
+    async sendTransfers(
         provider: ContractProvider,
         keypair: KeyPair,
-        recipient: Address,
-        value: bigint,
-        body?: Cell,
-        init?: StateInit
+        messages: MessageToSend[]
     ) {
-        await this.sendAction(
+        await this.sendActions(
             provider,
-            formSendMsgAction(recipient, value, 1, body, init),
+            messages.map((msg) => formSendMsgAction(msg, 3)),
             keypair
         );
     }
@@ -120,7 +124,7 @@ export class Wallet implements Contract {
         keypair: KeyPair,
         code: Cell
     ) {
-        await this.sendAction(provider, formSetCodeAction(code), keypair);
+        await this.sendActions(provider, [formSetCodeAction(code)], keypair);
     }
 
     async getPublicKey(provider: ContractProvider): Promise<Maybe<Buffer>> {

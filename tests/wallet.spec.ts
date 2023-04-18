@@ -70,22 +70,25 @@ describe('Flooder', () => {
 
     it('should send simple transfers', async () => {
         const addr = randomAddress();
-        let result = await wallet.sendTransfer(keypair, addr, toNano('0.01'));
+        let result = await wallet.sendTransfers(keypair, [
+            { recipient: addr, value: toNano('0.01') },
+        ]);
         expect(result.transactions).toHaveTransaction({
             from: wallet.address,
             to: addr,
             value: toNano('0.01'),
         });
 
-        result = await wallet.sendTransfer(
-            keypair,
-            addr,
-            toNano('0.015'),
-            beginCell()
-                .storeUint(0, 32)
-                .storeStringTail('Hello, world!')
-                .endCell()
-        );
+        result = await wallet.sendTransfers(keypair, [
+            {
+                recipient: addr,
+                value: toNano('0.015'),
+                body: beginCell()
+                    .storeUint(0, 32)
+                    .storeStringTail('Hello, world!')
+                    .endCell(),
+            },
+        ]);
         expect(result.transactions).toHaveTransaction({
             from: wallet.address,
             to: addr,
@@ -95,6 +98,24 @@ describe('Flooder', () => {
                 .storeStringTail('Hello, world!')
                 .endCell(),
         });
+    });
+
+    it('should send several messages', async () => {
+        let messages = [];
+        for (let i = 0; i < 10; i++) {
+            messages.push({
+                recipient: randomAddress(),
+                value: toNano('0.001'),
+            });
+        }
+        let result = await wallet.sendTransfers(keypair, messages);
+        for (const msg of messages) {
+            expect(result.transactions).toHaveTransaction({
+                from: wallet.address,
+                to: msg.recipient,
+                value: msg.value,
+            });
+        }
     });
 
     it('should update code', async () => {
