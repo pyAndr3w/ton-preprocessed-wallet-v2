@@ -11,7 +11,6 @@ import {
     StateInit,
     storeStateInit,
 } from 'ton-core';
-import { Maybe } from 'ton-core/dist/utils/maybe';
 import { KeyPair, sign } from 'ton-crypto';
 
 type MessageToSend = {
@@ -127,7 +126,9 @@ export class Wallet implements Contract {
         await this.sendActions(provider, [formSetCodeAction(code)], keypair);
     }
 
-    async getPublicKey(provider: ContractProvider): Promise<Maybe<Buffer>> {
+    async getPublicKey(
+        provider: ContractProvider
+    ): Promise<Buffer | undefined> {
         const state = (await provider.getState()).state;
         if (state.type == 'active') {
             const data = Cell.fromBoc(state.data!)[0].beginParse();
@@ -135,7 +136,7 @@ export class Wallet implements Contract {
         }
     }
 
-    async getSeqno(provider: ContractProvider): Promise<Maybe<bigint>> {
+    async getSeqno(provider: ContractProvider): Promise<bigint | undefined> {
         const state = (await provider.getState()).state;
         if (state.type == 'active') {
             const data = Cell.fromBoc(state.data!)[0].beginParse();
