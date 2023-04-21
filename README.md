@@ -35,7 +35,7 @@ this wallet smart contract, running it locally in TVM. This will help avoid bugs
 
 ## TypeScript usage
 
-You can also use this wallet contract through TypeScript (or JavaScript) via wrapper from [`wrapper/wallet.ts`](./wrapper/wallet.ts)
+You can also use this wallet contract through TypeScript (or JavaScript) via wrapper from [`typescript/wrapper/wallet.ts`](./typescript/wrapper/wallet.ts)
 
 ## License
 
