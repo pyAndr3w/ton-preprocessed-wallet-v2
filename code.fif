@@ -31,6 +31,6 @@
     EQUAL 33 THROWIFNOT                     // actions hash sign key valid_until
     NOW GEQ 34 THROWIFNOT                   // actions hash sign key
     CHKSIGNU 35 THROWIFNOT                  // actions
-    ACCEPT COMMIT                           // actions
+    ACCEPT                                  // actions
     c5 POP
 }>c
