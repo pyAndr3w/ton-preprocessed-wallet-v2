@@ -37,6 +37,10 @@ this wallet smart contract, running it locally in TVM. This will help avoid bugs
 
 You can also use this wallet contract through TypeScript (or JavaScript) via wrapper from [`typescript/wrapper/wallet.ts`](./typescript/wrapper/wallet.ts)
 
+## Audit
+
+- [Pruvendo at 05/11/23](./audit/Pruvendo-230511.md)
+
 ## License
 
 [GNU LESSER GENERAL PUBLIC LICENSE Version 3](./LICENSE.LGPL)
