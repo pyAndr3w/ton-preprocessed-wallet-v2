@@ -1,0 +1,149 @@
+#!fift -s
+
+// 
+// ton-preprocessed-wallet-v2-fift – open-source fift script for
+// interacting with ton-preprocessed-wallet-v2
+// 
+// Copyright (C) 2023 cryshado <github.com/cryshado>
+// 
+// This file is part of ton-preprocessed-wallet-v2
+// 
+// ton-preprocessed-wallet-v2 is free software: you can redistribute it and/or modify it under the terms
+// of the GNU Lesser General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+// 
+// ton-preprocessed-wallet-v2 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+// without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public License along with ton-preprocessed-wallet-v2.
+// If not, see <https://www.gnu.org/licenses/>.
+// 
+
+"TonUtil.fif" include
+"GetOpt.fif"  include
+
+{ show-options-help 1 halt } : usage
+
+"" =: comment
+0  =: pw-wc
+3  =: mode
+60 =: expt
+false =: neww
+
+"pw-code.fif" include =: pw-code
+
+begin-options
+    "<file-base> <dest-addr> <seqno> <amount> [<savefile>]" +cr
+    +"creates a request to preprocessed-wallet-v2 and saves it into <savefile>.boc" +cr
+    disable-digit-options generic-help-setopt
+
+    "e" "--expt" { parse-int =: expt } short-long-option-arg
+        "sets expiration timeout in seconds (" expt (.) $+ +" by default)" option-help
+    "C" "--comm" { =: comment } short-long-option-arg
+        "sets the comment to be sent in the transfer message" option-help
+    "B" "--body" { =: body-boc-file } short-long-option-arg
+        "sets the payload(body) of the transfer message" option-help
+    "I" "--init" { =: init-boc-file } short-long-option-arg
+        "sets the state init of the transfer message" option-help
+    "w" "--pwwc" { =: parse-int =: pw-wc } short-long-option-arg
+        "sets current pw smc workchain (" pw-wc (.) $+ +" by default)" option-help
+    "s" "--sgid" { parse-int =: sgid } short-long-option-arg
+        "sets signature id (for signature id capability)" option-help
+    "m" "--mode" { parse-int =: mode } short-long-option-arg
+        "sets transfer mode (0..255) (" mode (.) $+ +" by default)" option-help
+    "b" "--bunc" { parse-bool =: forced-bounce } short-long-option-arg
+        "overrides address bounce flag with boolean" option-help
+    "n" "--neww" { true =: neww } short-long-option
+        9 chr +"adds a state init to create a new wallet" option-help
+    "h" "--help" { usage } short-long-option
+        9 chr +"shows a help message" option-help
+parse-options
+
+$# dup 4 < swap 5 > or ' usage if
+5 :$1..n
+
+$1 =: file-base
+$2 parse-smc-addr =: bounce 2=: dest-addr
+$3 parse-int =: seqno
+$4 $>GR =: amount
+$5 "pw-query" replace-if-null =: savefile
+
+def? forced-bounce { @' forced-bounce =: bounce } if
+
+file-base +".pk" load-generate-keypair cr
+=: priv-key =: pub-key
+
+<b pub-key B, 0 16 u, b> =: pw-storage
+<b b{00110} s, pw-code ref, pw-storage ref, b> =: pw-init
+
+pw-wc pw-init hashu 2=: pw-addr
+
+."preprocessed-wallet-v2 address (from state-init):"
+cr pw-addr .addr cr cr
+
+
+def? body-boc-file
+{ @' body-boc-file file>B B>boc }
+{ comment simple-transfer-body }
+cond =: body-cell
+
+def? init-boc-file
+{ @' init-boc-file file>B B>boc }
+{ <b b> }
+cond =: init-cell
+
+<b
+    b{00} s,             // int_msg_info$0 ihr_disabled:Bool
+    bounce 1 i,          // bounce:Bool
+    b{000} s,            // bounced:Bool src:MsgAddress
+    dest-addr Addr,      // dest:MsgAddressInt
+    amount Gram, b{0} s, // value:CurrencyCollection
+    0 4 4 64 32 + + + u,
+
+    init-cell <s sbits 0 >
+    { b{10} s, @' init-cell <s s, } { b{0} s, }
+    cond
+
+    body-cell <s 2dup 1
+    s-fits-with? not rot over 1 i, -rot
+    { drop body-cell ref, } { s, }
+    cond
+
+b> =: message
+
+<b <b b> ref, x{0ec3c86d} s, mode 8 u, message ref, b> =: actions
+<b now expt + 64 u, seqno 16 u, actions ref, b> =: msg-inner
+
+{ <b swap 32 i, b> <s 4 B@ } : i>sgidB
+
+msg-inner hashB
+def? sgid { @' sgid i>sgidB swap B+ } if
+priv-key ed25519_sign =: sign
+
+<b sign B, msg-inner ref, b> =: ext-msg-body
+
+{ { ."true" } { ."false" } cond } : print-bool
+
+."dest:   " dest-addr .addr cr
+."amount: " amount (.GR) type cr
+."bounce: " bounce print-bool cr
+."seqno:  " seqno . cr
+."mode:   " mode . cr
+."neww:   " neww print-bool cr
+def? sgid { @' sgid "sgid:" +tab type . cr } if cr
+
+body-cell <s sbits 0 >
+{ ."with body:" cr body-cell <s 4 lcsr. cr } if
+
+init-cell <s sbits 0 >
+{ ."with init:" cr init-cell <s 4 lcsr. cr } if
+
+<b
+    b{1000} s, pw-addr Addr, 0 Gram,
+    neww { b{10} s, pw-init <s s, } { b{0} s, } cond
+    b{0} s, ext-msg-body <s s,
+b>
+
+2 boc+>B savefile +".boc" tuck B>file
+."saved external message to file: " type cr
