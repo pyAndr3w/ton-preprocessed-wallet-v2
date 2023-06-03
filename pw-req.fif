@@ -94,7 +94,7 @@ def? init-boc-file
 cond =: init-cell
 
 <b
-    b{00} s,             // int_msg_info$0 ihr_disabled:Bool
+    b{01} s,             // int_msg_info$0 ihr_disabled:Bool
     bounce 1 i,          // bounce:Bool
     b{000} s,            // bounced:Bool src:MsgAddress
     dest-addr Addr,      // dest:MsgAddressInt
