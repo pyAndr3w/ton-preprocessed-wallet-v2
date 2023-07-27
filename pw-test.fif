@@ -55,7 +55,7 @@ balance null pair    // balance_remaining
   priv-key <b "t" $, b> 0 60 build-msg =: body
   @' vm-flags @' storage @' body balance run-ext-msg 
 
-  1537 = not abort"error gas usage"
+  1519 = not abort"error gas usage"
   hashu <b "t" $, b> hashu = not abort"invalid c5"
   hashu 1 pub-key build-storage hashu = not abort"invalid c4"
   0= not abort"unexpected exit code (expected - 0)"
