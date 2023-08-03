@@ -19,7 +19,7 @@ jobs:
         wget $RAW_REPOSITORY/$VERSION/crypto/fift/lib/Fift.fif
         wget $RAW_REPOSITORY/$VERSION/crypto/fift/lib/Asm.fif
         wget $RAW_REPOSITORY/$VERSION/crypto/fift/lib/GetOpt.fif
-        wget $REPOSITORY/$VERSION/crypto/fift/lib/TonUtil.fif
+        wget $RAW_REPOSITORY/$VERSION/crypto/fift/lib/TonUtil.fif
         mv ./fift-linux-x86_64 /usr/local/bin/fift
         chmod +x /usr/bin/fift
       env:
