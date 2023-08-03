@@ -1,0 +1,31 @@
+name: test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v3
+    - run: |
+        wget $REPOSITORY/releases/download/$VERSION/fift-linux-x86_64
+        wget $RAW_REPOSITORY/$VERSION/crypto/fift/lib/Lists.fif
+        wget $RAW_REPOSITORY/$VERSION/crypto/fift/lib/Fift.fif
+        wget $RAW_REPOSITORY/$VERSION/crypto/fift/lib/Asm.fif
+        wget $RAW_REPOSITORY/$VERSION/crypto/fift/lib/GetOpt.fif
+        wget $RAW_REPOSITORY/$VERSION/crypto/fift/lib/TonUtil.fif
+
+        sudo mv ./fift-linux-x86_64 /usr/bin/fift
+        sudo chmod +x /usr/bin/fift
+      env:
+        VERSION: v2023.06
+        REPOSITORY: https://github.com/ton-blockchain/ton
+        RAW_REPOSITORY: https://raw.githubusercontent.com/ton-blockchain/ton
+        
+    - run: make test
