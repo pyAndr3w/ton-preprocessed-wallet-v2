@@ -20,6 +20,6 @@ jobs:
         wget https://raw.githubusercontent.com/ton-blockchain/ton/v2023.06/crypto/fift/lib/GetOpt.fif
         wget https://raw.githubusercontent.com/ton-blockchain/ton/v2023.06/crypto/fift/lib/TonUtil.fif
 
-        mv ./fift-linux-x86_64 fift /usr/bin/fift
+        mv ./fift-linux-x86_64 /usr/bin/fift
         chmod +x /usr/bin/fift
     - run: make test
