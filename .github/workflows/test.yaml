@@ -14,13 +14,14 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - run: |
-        wget https://github.com/ton-blockchain/ton/releases/download/v2023.06/fift-linux-x86_64
-        wget https://raw.githubusercontent.com/ton-blockchain/ton/v2023.06/crypto/fift/lib/Fift.fif
-        wget https://raw.githubusercontent.com/ton-blockchain/ton/v2023.06/crypto/fift/lib/Asm.fif
-        wget https://raw.githubusercontent.com/ton-blockchain/ton/v2023.06/crypto/fift/lib/GetOpt.fif
-        wget https://raw.githubusercontent.com/ton-blockchain/ton/v2023.06/crypto/fift/lib/Lists.fif
-        wget https://raw.githubusercontent.com/ton-blockchain/ton/v2023.06/crypto/fift/lib/TonUtil.fif
-
-        sudo mv ./fift-linux-x86_64 /usr/bin/fift
-        sudo chmod +x /usr/bin/fift
+        wget $REPOSITORY/releases/download/$VERSION/fift-linux-x86_64
+        wget $REPOSITORY/$VERSION/crypto/fift/lib/Fift.fif
+        wget $REPOSITORY/$VERSION/crypto/fift/lib/Asm.fif
+        wget $REPOSITORY/$VERSION/crypto/fift/lib/GetOpt.fif
+        wget $REPOSITORY/$VERSION/crypto/fift/lib/TonUtil.fif
+        mv ./fift-linux-x86_64 /usr/local/bin/fift
+        chmod +x /usr/bin/fift
+      env:
+        REPOSITORY: https://github.com/ton-blockchain/ton
+        VERSION: v2023.06
     - run: make test
