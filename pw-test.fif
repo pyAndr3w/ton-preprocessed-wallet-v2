@@ -1,0 +1,112 @@
+#!fift -s
+
+"TonUtil.fif" include
+"pw-code.fif" include <s =: code-cs
+
+1000000 =: gas-limit
+1691089770 =: test-now
+newkeypair =: pub-key =: priv-key
+1000000000 =: balance
+
+"0:0000000000000000000000000000000000000000000000000000000000000000"
+parse-smc-addr drop 2=: self
+
+0x076ef1ea           // magic
+0                    // actions
+0                    // msgs_sent
+test-now             // unixtime
+1                    // block_lt
+1                    // trans_lt
+239                  // randseed
+balance null pair    // balance_remaining
+<b self Addr, b> <s  // contract address
+<b b>                // empty global_config
+10 tuple 1 tuple =: c7
+
+8 4 16 32 + + + =: vm::with-default
+64 8 4 16 32 + + + + =: vm::with-ops-log
+256 64 8 4 16 32 + + + + + =: vm::with-stack-trace
+
+{ { drop } swap times } : dropn
+
+// pk(B) actions(c) seqno(i) timeout(i) -- body(c)
+{ <b test-now rot + 64 u, swap 16 u, swap ref, b> dup
+  hashB rot ed25519_sign <b swap B, swap ref, b> 
+} : build-msg 
+
+// seq_no(i) pub_key(B) -- storage(c)
+{ <b swap B, swap 16 u, b> } : build-storage
+
+// flags(i) storage(c) body(c) balance(i) -- ...
+{ 0 <b b> 3 roll <s -1 code-cs 6 roll 
+  c7 gas-limit 9 roll runvmx
+} : run-ext-msg
+
+{ 3 dropn depth 0= not 
+  abort"unexpected depth after ok test" 
+} : rec-stk-after-ok
+
+{ drop depth 0= not 
+  abort"unexpected depth after err test" 
+} : rec-stk-after-err
+
+{ =: vm-flags 
+  0 pub-key build-storage =: storage
+  priv-key <b "t" $, b> 0 60 build-msg =: body
+  @' vm-flags @' storage @' body balance run-ext-msg 
+
+  1537 = not abort"error gas usage"
+  hashu <b "t" $, b> hashu = not abort"invalid c5"
+  hashu 1 pub-key build-storage hashu = not abort"invalid c4"
+  0= not abort"unexpected exit code (expected - 0)"
+
+  rec-stk-after-ok ."[OK] test::should-pass-general" cr
+} : test::should-pass-general
+
+{ =: vm-flags 
+  2 15 << 1- pub-key build-storage =: storage
+  priv-key <b "t" $, b> 2 15 << 1- 60 build-msg =: body
+  @' vm-flags @' storage @' body balance run-ext-msg 
+
+  2drop <s 256 u@+ 16 u@ swap drop
+  0= not abort"unexpected seqno (expected - 0)"
+  0= not abort"unexpected exit code (expected - 0)"
+
+  rec-stk-after-ok ."[OK] test::should-overflow-seqno" cr
+} : test::should-overflow-seqno
+
+{ =: vm-flags 
+  5 pub-key build-storage =: storage
+  priv-key <b "t" $, b> 4 60 build-msg =: body
+  @' vm-flags @' storage @' body balance run-ext-msg 
+
+  3 dropn 33 = not abort"unexpected exit code (expected - 33)"
+  rec-stk-after-err ."[OK] test::should-throw-33" cr
+} : test::should-throw-33
+
+{ =: vm-flags 
+  0 pub-key build-storage =: storage
+  priv-key <b "t" $, b> 0 -1 build-msg =: body
+  @' vm-flags @' storage @' body balance run-ext-msg 
+
+  3 dropn 34 = not abort"unexpected exit code (expected - 34)"
+  rec-stk-after-err ."[OK] test::should-throw-34" cr
+} : test::should-throw-34
+
+{ =: vm-flags 
+  0 pub-key build-storage =: storage
+  B{8DDBFFD8A62A7BA277CBCDC269F5B7626992F4FEE783F3A88AF4CC53D19D91AB} 
+  <b "t" $, b> 0 0 build-msg =: body
+  @' vm-flags @' storage @' body balance run-ext-msg 
+
+  3 dropn 35 = not abort"unexpected exit code (expected - 35)"
+  rec-stk-after-err ."[OK] test::should-throw-35" cr
+} : test::should-throw-35
+
+// -------- run tests --------
+vm::with-default test::should-pass-general
+vm::with-default test::should-overflow-seqno
+vm::with-default test::should-throw-33
+vm::with-default test::should-throw-34
+vm::with-default test::should-throw-35
+// ---------------------------
