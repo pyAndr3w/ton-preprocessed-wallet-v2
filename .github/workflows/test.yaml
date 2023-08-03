@@ -21,8 +21,8 @@ jobs:
         wget $RAW_REPOSITORY/$VERSION/crypto/fift/lib/GetOpt.fif
         wget $RAW_REPOSITORY/$VERSION/crypto/fift/lib/TonUtil.fif
 
-        mv ./fift-linux-x86_64 /usr/bin/fift
-        chmod +x /usr/bin/fift
+        sudo mv ./fift-linux-x86_64 /usr/bin/fift
+        sudo chmod +x /usr/bin/fift
       env:
         VERSION: v2023.06
         REPOSITORY: https://github.com/ton-blockchain/ton
