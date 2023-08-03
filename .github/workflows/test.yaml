@@ -18,6 +18,7 @@ jobs:
         wget https://raw.githubusercontent.com/ton-blockchain/ton/v2023.06/crypto/fift/lib/Fift.fif
         wget https://raw.githubusercontent.com/ton-blockchain/ton/v2023.06/crypto/fift/lib/Asm.fif
         wget https://raw.githubusercontent.com/ton-blockchain/ton/v2023.06/crypto/fift/lib/GetOpt.fif
+        wget https://raw.githubusercontent.com/ton-blockchain/ton/v2023.06/crypto/fift/lib/Lists.fif
         wget https://raw.githubusercontent.com/ton-blockchain/ton/v2023.06/crypto/fift/lib/TonUtil.fif
 
         sudo mv ./fift-linux-x86_64 /usr/bin/fift
