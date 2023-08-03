@@ -20,7 +20,8 @@ jobs:
         wget $RAW_REPOSITORY/$VERSION/crypto/fift/lib/Asm.fif
         wget $RAW_REPOSITORY/$VERSION/crypto/fift/lib/GetOpt.fif
         wget $RAW_REPOSITORY/$VERSION/crypto/fift/lib/TonUtil.fif
-        mv ./fift-linux-x86_64 /usr/local/bin/fift
+
+        mv ./fift-linux-x86_64 /usr/bin/fift
         chmod +x /usr/bin/fift
       env:
         VERSION: v2023.06
