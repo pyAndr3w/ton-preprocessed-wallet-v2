@@ -1,6 +1,6 @@
 ## ton-preprocessed-wallet changelog
 
-## v2r1 (Aug 6, 2023)
+## v2.1 (Aug 6, 2023)
 
 Changes:
 - gas optimizations (1537 gas -> 1519 gas)
@@ -15,7 +15,7 @@ B5EE9C7241010101003C000074FF00DDD40120F90001D0D33FD30FD74CED44D0D3FFD70B0F20A4A9
 49B91C4133CAFFC163CF36B87572A73EC918C251FD7CE4F424D699F0CC5D6781
 ```
 
-## v2 (Apr 24, 2023)
+## v2.0 (Apr 24, 2023)
 
 **code boc**
 

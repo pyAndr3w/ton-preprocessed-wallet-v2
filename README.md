@@ -1,4 +1,4 @@
-## ton-preprocessed-wallet-v2r1
+## ton-preprocessed-wallet-v2.1
 
 **code boc**
 
