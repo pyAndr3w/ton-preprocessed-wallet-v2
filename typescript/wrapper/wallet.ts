@@ -20,6 +20,13 @@ type MessageToSend = {
     body?: Cell;
 };
 
+export const walletCode = Cell.fromBoc(
+    Buffer.from(
+        'B5EE9C7241010101003D000076FF00DDD40120F90001D0D33FD30FD74CED44D0D3FFD70B0F20A4830FA90822C8CBFFCB0FC9ED5444301046BAF2A1F823BEF2A2F910F2A3F800ED552E766412',
+        'hex'
+    )
+)[0];
+
 function formSendMsgAction(msg: MessageToSend, mode: number): Slice {
     let b = beginCell()
         .storeUint(0x18, 6)
@@ -64,12 +71,12 @@ export class Wallet implements Contract {
         return new Wallet(address);
     }
 
-    static createFromPublicKey(publicKey: Buffer, code: Cell, workchain = 0) {
+    static createFromPublicKey(publicKey: Buffer, workchain = 0) {
         const data = beginCell()
             .storeBuffer(publicKey, 32)
             .storeUint(0, 16)
             .endCell();
-        const init = { code, data };
+        const init = { code: walletCode, data };
         return new Wallet(contractAddress(workchain, init), init);
     }
 
