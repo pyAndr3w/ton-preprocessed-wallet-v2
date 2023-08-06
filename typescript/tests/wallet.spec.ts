@@ -4,23 +4,12 @@ import {
     TreasuryContract,
 } from '@ton-community/sandbox';
 import { Cell, beginCell, toNano } from 'ton-core';
-import { Wallet } from '../wrapper/wallet';
+import { Wallet, walletCode } from '../wrapper/wallet';
 import '@ton-community/test-utils';
 import { KeyPair, getSecureRandomBytes, keyPairFromSeed } from 'ton-crypto';
 import { randomAddress } from '@ton-community/test-utils';
 
 describe('Flooder', () => {
-    let code: Cell;
-
-    beforeAll(async () => {
-        code = Cell.fromBoc(
-            Buffer.from(
-                'B5EE9C7241010101003D000076FF00DDD40120F90001D0D33FD30FD74CED44D0D3FFD70B0F20A4830FA90822C8CBFFCB0FC9ED5444301046BAF2A1F823BEF2A2F910F2A3F800ED552E766412',
-                'hex'
-            )
-        )[0];
-    });
-
     let blockchain: Blockchain;
     let wallet: SandboxContract<Wallet>;
     let keypair: KeyPair;
@@ -31,7 +20,7 @@ describe('Flooder', () => {
         keypair = keyPairFromSeed(await getSecureRandomBytes(32));
 
         wallet = blockchain.openContract(
-            Wallet.createFromPublicKey(keypair.publicKey, code)
+            Wallet.createFromPublicKey(keypair.publicKey)
         );
 
         deployer = await blockchain.treasury('deployer');
@@ -119,7 +108,7 @@ describe('Flooder', () => {
     });
 
     it('should update code', async () => {
-        let result = await wallet.sendSetCode(keypair, code);
+        let result = await wallet.sendSetCode(keypair, walletCode);
         expect(result.transactions).toHaveTransaction({
             to: wallet.address,
             success: true,
