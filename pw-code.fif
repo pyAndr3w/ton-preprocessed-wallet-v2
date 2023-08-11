@@ -25,7 +25,7 @@
     SWAP CTOS 64 LDU 16 LDU PLDREF          // sign hash valid_until msg_seqno actions
     c4 PUSH CTOS                            // sign hash valid_until msg_seqno actions c4s
     256 LDU 16 PLDU                         // sign hash valid_until msg_seqno actions key seqno
-    DUP INC 16 PUSHPOW2 MOD s2 PUSH         // sign hash valid_until msg_seqno actions key seqno new_seqno key
+    DUP INC 16 MODPOW2# s2 PUSH             // sign hash valid_until msg_seqno actions key seqno new_seqno key
     NEWC 256 STU 16 STU ENDC c4 POP         // sign hash valid_until msg_seqno actions key seqno
     s4 s3 s0 XCHG3 s4 s6 XCHG               // actions hash sign key valid_until msg_seqno seqno
     EQUAL 33 THROWIFNOT                     // actions hash sign key valid_until

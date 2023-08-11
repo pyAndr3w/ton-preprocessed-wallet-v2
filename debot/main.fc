@@ -32,7 +32,7 @@ forall X -> (X) idxvar_t(tuple, int) asm "INDEXVAR";
 forall M, E, O, W, C, A, T -> ( M, E, O, W, C, A, T )
 untuple7([ M, E, O, W, C, A, T ] t) asm "7 UNTUPLE";
 
-cell wallet_code() asm "124 word ../code.fif| include PUSHREF";
+cell wallet_code() asm "124 word ../pw-code.fif| include PUSHREF";
 
 slice utils::build_addrstd(int wc, int address) inline {
     builder addr = begin_cell()
